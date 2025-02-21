@@ -1,6 +1,6 @@
 import argparse
 from face_detector import FaceDetector
-from delete import delete_images_based_on_scores
+from file import process_images_based_on_scores
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process images in a folder and save detection results to face.json.')
@@ -13,11 +13,19 @@ if __name__ == "__main__":
     parser.add_argument('--onnx_model_path_yoloface', type=str, default='yoloface_8n.onnx', help='Path to the YOLOFace ONNX model.')
     parser.add_argument('--onnx_model_path_2dfan4', type=str, default='2dfan4.onnx', help='Path to the 2DFAN4 ONNX model.')
     parser.add_argument('--delete', action='store_true', help='Delete images based on face scores and landmark scores.')
+    parser.add_argument('--copy', action='store_true', help='Copy images based on face landmark scores.')
     parser.add_argument('--landmark_score', type=float, default=0.9, help='Threshold for face landmark scores.')
+    parser.add_argument('--target_path', type=str, default='./copied_images', help='Target path to copy the images. Default is./copied_images.')
 
     args = parser.parse_args()
     detector = FaceDetector(args.onnx_model_path_yoloface, args.onnx_model_path_2dfan4, args.onnx_provider, args.device_type)
     detector.process_images_in_folder(args.folder_path, args.face_detector_size, args.face_detector_score, args.output_json)
 
-    if args.delete:
-        delete_images_based_on_scores(args.output_json, args.landmark_score)
+    if args.delete or args.copy:
+        process_images_based_on_scores(
+            args.output_json,
+            args.landmark_score,
+            args.target_path,
+            args.delete,
+            args.copy
+        )
