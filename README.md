@@ -1,6 +1,6 @@
 # IMG_FACEDETECTOR 
 
-`img_facedetector`是一款基于Python开发的功能强大的图像人脸检测工具，借助ONNX运行时和YOLOFace模型，能以极高的精度检测图像中的人脸。它不仅能处理单张图像，还能批量处理整个文件夹内的图像。根据检测结果，用户可以选择删除未检测到人脸的图像，也可以将检测到人脸的图像路径输出到JSON文件中。在实际测试中，搭配Intel Arc B580显卡并结合`onnxruntime-openvino`，能实现极为高效的推理性能，大幅提升检测效率。
+`img_facedetector`是一款基于Python开发的功能强大的图像人脸检测工具，借助ONNX运行时和YOLOFace模型，能以极高的精度检测图像中的人脸。它不仅能处理单张图像，还能批量处理多个文件夹内的图像。根据检测结果，用户可以选择删除未检测到人脸的图像，也可以将检测到人脸的图像路径输出到JSON文件中。在实际测试中，搭配Intel Arc B580显卡并结合`onnxruntime-openvino`，能实现极为高效的推理性能，大幅提升检测效率。
 
 ## 功能亮点
 - **高效人脸检测**：依托YOLOFace模型与ONNX运行时，能迅速且精准地检测图像中的人脸，满足安防监控、图像分析、人脸识别等各类场景的检测需求。
@@ -36,7 +36,7 @@ pip install onnxruntime-openvino
 ## 使用步骤
 1. **下载ONNX模型**：获取`yoloface_8n.onnx`和`2dfan4.onnx`模型文件，并放置在正确路径下。可从模型官方来源获取。
 2. **运行`main.py`**：通过命令行运行工具，支持以下参数：
-    - `folder_path`：必填参数，指定包含图像的文件夹路径。
+    - `folder_path`：必填参数，可指定一个或多个包含图像的文件夹路径。
     - `--face_detector_size`：可选参数，指定人脸检测器的分辨率，格式为`widthxheight`，默认为`640x640`。
     - `--face_detector_score`：可选参数，指定人脸检测分数阈值，默认为`0.7`。
     - `--output_json`：可选参数，指定输出人脸图片路径的JSON文件路径，默认为`face.json`。
@@ -49,11 +49,11 @@ pip install onnxruntime-openvino
     - `--landmark_score`：可选参数，指定人脸关键点分数阈值，默认为`0.9`，当`--delete`或`--copy`选项开启时生效。
     - `--target_path`：可选参数，指定复制图像的目标路径，默认为`./copied_images`，当`--copy`选项开启时生效。
 
-示例命令（使用Intel显卡，删除不符合条件图像，复制符合条件图像）：
+示例命令（使用Intel显卡，删除不符合条件图像，复制符合条件图像，处理多个文件夹）：
 ```bash
-python main.py /path/to/images --face_detector_size 640x640 --face_detector_score 0.7 --delete --landmark_score 0.9 --output_json face.json --onnx_provider OpenVINOExecutionProvider --device_type GPU --onnx_model_path_yoloface yoloface_8n.onnx --onnx_model_path_2dfan4 2dfan4.onnx --copy --target_path ./new_copied_images
+python main.py /path/to/images1 /path/to/images2 --face_detector_size 640x640 --face_detector_score 0.7 --delete --landmark_score 0.9 --output_json face.json --onnx_provider OpenVINOExecutionProvider --device_type GPU --onnx_model_path_yoloface yoloface_8n.onnx --onnx_model_path_2dfan4 2dfan4.onnx --copy --target_path./new_copied_images
 ```
-简化命令(默认参数):
+简化命令(默认参数，处理单个文件夹)：
 ```bash
 python main.py /path/to/images 
 ```
@@ -67,7 +67,7 @@ python main.py /path/to/images
 
 示例命令（删除原始目录不符合条件图像，复制符合条件图像到新目录）：
 ```bash
-python file.py --landmark_score 0.8 --delete --copy --target_path ./new_copied_images
+python file.py --landmark_score 0.8 --delete --copy --target_path./new_copied_images
 ```
 此命令会使用默认的`face.json`文件，根据`0.8`的关键点分数阈值来删除不符合条件的图像，并将符合条件的图像复制到`./new_copied_images`目录。
 
@@ -82,7 +82,7 @@ python file.py --landmark_score 0.8 --delete --copy --target_path ./new_copied_i
     - `detect_with_yoloface`：使用YOLOFace模型进行人脸检测，返回边界框、分数和5点人脸关键点，提供详细的检测信息。
     - `detect_with_2dfan4`：使用2DFAN4模型获取人脸68个关键点及其分数，为图像筛选提供更全面的数据。
     - `process_single_image`：处理单张图片，判断是否检测到人脸，并获取人脸关键点分数，输出检测结果。
-    - `process_images_in_folder`：处理文件夹中的图像，根据选项删除未检测到人脸的图像或输出人脸图片路径JSON文件，实现批量处理功能。
+    - `process_images_in_folder`：处理一个或多个文件夹中的图像，根据选项删除未检测到人脸的图像或输出人脸图片路径JSON文件，实现批量处理功能。
 2. **命令行参数解析**：利用`argparse`模块解析命令行参数，根据用户输入的参数灵活配置工具行为，满足不同用户的多样化需求。
 
 ### file.py

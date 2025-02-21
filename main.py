@@ -3,8 +3,8 @@ from face_detector import FaceDetector
 from file import process_images_based_on_scores
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Process images in a folder and save detection results to face.json.')
-    parser.add_argument('folder_path', type=str, help='Path to the folder containing images.')
+    parser = argparse.ArgumentParser(description='Process images in one or more folders and save detection results to face.json.')
+    parser.add_argument('folder_path', type=str, nargs='+', help='Path to one or more folders containing images.')
     parser.add_argument('--face_detector_size', type=str, default='640x640', help='Resolution for the face detector, in the format "widthxheight".')
     parser.add_argument('--face_detector_score', type=float, default=0.7, help='Score threshold for face detection.')
     parser.add_argument('--output_json', type=str, default='face.json', help='Output JSON file path for detection results.')

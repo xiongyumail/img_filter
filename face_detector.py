@@ -162,12 +162,14 @@ class FaceDetector:
             print(f"Error processing {file_path}: {e}")
         return [], [], [], [], []
 
-    def process_images_in_folder(self, folder_path: str, face_detector_size: str = '640x640', face_detector_score: float = 0.5, output_json: str = 'face.json'):
+    def process_images_in_folder(self, folder_paths: List[str], face_detector_size: str = '640x640', face_detector_score: float = 0.5, output_json: str = 'face.json'):
         image_files = []
-        for root, _, files in os.walk(folder_path):
-            for file in files:
-                if file.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    image_files.append(os.path.join(root, file))
+        # 遍历多个文件夹路径
+        for folder_path in folder_paths:
+            for root, _, files in os.walk(folder_path):
+                for file in files:
+                    if file.lower().endswith(('.png', '.jpg', '.jpeg')):
+                        image_files.append(os.path.join(root, file))
 
         image_result_dict = {}
         with concurrent.futures.ThreadPoolExecutor() as executor:
