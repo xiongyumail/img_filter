@@ -51,21 +51,21 @@ if __name__ == "__main__":
                         help='Path to the JSON file containing face detection results. Default is face.json.')
     parser.add_argument('--landmark_score', type=float, default=0.9,
                         help='Threshold for face landmark scores.')
-    parser.add_argument('--target_path', type=str, default='./copied_images',
-                        help='Target path to copy the images. Default is./copied_images.')
     parser.add_argument('--delete', action='store_true', help='Delete images based on face scores and landmark scores.')
-    parser.add_argument('--copy', action='store_true', help='Copy images based on face landmark scores.')
+    parser.add_argument('--copy', nargs='?', const='./copied_images', type=str,
+                        help='Copy images based on face landmark scores. Optionally specify the target path.')
 
     args = parser.parse_args()
 
     # 检查是否至少指定了一个操作
-    if not args.delete and not args.copy:
+    if not args.delete and args.copy is None:
         print("Please specify at least one of --delete or --copy options.")
     else:
+        target_path = args.copy if args.copy else './copied_images'
         process_images_based_on_scores(
             args.json_file_path,
             args.landmark_score,
-            args.target_path,
+            target_path,
             args.delete,
-            args.copy
+            bool(args.copy)
         )

@@ -8,7 +8,7 @@
 - **多线程处理**：通过`concurrent.futures.ThreadPoolExecutor`实现多线程处理机制，显著加快图像检测速度，尤其适用于处理大量图像的任务。
 - **灵活配置选项**：用户可通过命令行参数灵活配置人脸检测器的分辨率、检测分数阈值、是否删除非人脸图像以及输出JSON文件的路径等，以适应不同的检测任务和需求。
 - **Intel GPU支持**：搭配`onnxruntime-openvino`，可充分发挥Intel显卡的强大计算能力，加速人脸检测进程，极大地提高检测效率。
-- **图像筛选与管理**：新增的删除和复制功能，可根据人脸检测分数和人脸关键点分数，自动删除不符合条件的图像，或复制符合条件的图像到指定目录，方便用户对图像数据集进行筛选和管理 。通过`--landmark_score`参数，用户可以灵活控制图像的筛选标准；通过`--delete`选项和`--copy`选项，以及`--target_path`参数，用户可以控制图像的删除复制操作和目标路径。
+- **图像筛选与管理**：新增的删除和复制功能，可根据人脸检测分数和人脸关键点分数，自动删除不符合条件的图像，或复制符合条件的图像到指定目录，方便用户对图像数据集进行筛选和管理 。通过`--landmark_score`参数，用户可以灵活控制图像的筛选标准；通过`--delete`选项和`--copy`选项，用户可以控制图像的删除复制操作，`--copy`选项可选择指定目标路径。
 
 ## 依赖安装
 ### 通用依赖
@@ -36,7 +36,8 @@ pip install onnxruntime-openvino
 ## 使用步骤
 1. **下载ONNX模型**：获取`yoloface_8n.onnx`和`2dfan4.onnx`模型文件，并放置在正确路径下。可从模型官方来源获取。
 2. **运行`main.py`**：通过命令行运行工具，支持以下参数：
-    - `folder_path`：必填参数，可指定一个或多个包含图像的文件夹路径。
+    - `--input_json`：可选参数，指定包含文件夹路径的JSON文件路径。
+    - `folder_path`：可选参数，可指定一个或多个包含图像的文件夹路径。若不指定`--input_json`，则此参数为必填。
     - `--face_detector_size`：可选参数，指定人脸检测器的分辨率，格式为`widthxheight`，默认为`640x640`。
     - `--face_detector_score`：可选参数，指定人脸检测分数阈值，默认为`0.7`。
     - `--output_json`：可选参数，指定输出人脸图片路径的JSON文件路径，默认为`face.json`。
@@ -45,14 +46,19 @@ pip install onnxruntime-openvino
     - `--onnx_model_path_yoloface`：可选参数，指定YOLOFace ONNX模型的路径，默认为`yoloface_8n.onnx`。
     - `--onnx_model_path_2dfan4`：可选参数，指定2DFAN4 ONNX模型的路径，默认为`2dfan4.onnx`。
     - `--delete`：可选参数，指定是否根据人脸检测分数和人脸关键点分数删除不符合条件的图像，默认为不删除。
-    - `--copy`：可选参数，指定是否根据人脸关键点分数复制符合条件的图像到指定目录。
+    - `--copy`：可选参数，指定是否根据人脸关键点分数复制符合条件的图像到指定目录。可选择指定目标路径，默认目标路径为`./copied_images`。
     - `--landmark_score`：可选参数，指定人脸关键点分数阈值，默认为`0.9`，当`--delete`或`--copy`选项开启时生效。
-    - `--target_path`：可选参数，指定复制图像的目标路径，默认为`./copied_images`，当`--copy`选项开启时生效。
 
-示例命令（使用Intel显卡，删除不符合条件图像，复制符合条件图像，处理多个文件夹）：
+示例命令（使用Intel显卡，删除不符合条件图像，复制符合条件图像到默认目录，处理多个文件夹）：
 ```bash
-python main.py /path/to/images1 /path/to/images2 --face_detector_size 640x640 --face_detector_score 0.7 --delete --landmark_score 0.9 --output_json face.json --onnx_provider OpenVINOExecutionProvider --device_type GPU --onnx_model_path_yoloface yoloface_8n.onnx --onnx_model_path_2dfan4 2dfan4.onnx --copy --target_path./new_copied_images
+python main.py /path/to/images1 /path/to/images2 --face_detector_size 640x640 --face_detector_score 0.7 --delete --landmark_score 0.9 --output_json face.json --onnx_provider OpenVINOExecutionProvider --device_type GPU --onnx_model_path_yoloface yoloface_8n.onnx --onnx_model_path_2dfan4 2dfan4.onnx --copy
 ```
+
+示例命令（使用Intel显卡，删除不符合条件图像，复制符合条件图像到指定目录，通过JSON文件指定文件夹路径）：
+```bash
+python main.py --input_json folders.json --face_detector_size 640x640 --face_detector_score 0.7 --delete --landmark_score 0.9 --output_json face.json --onnx_provider OpenVINOExecutionProvider --device_type GPU --onnx_model_path_yoloface yoloface_8n.onnx --onnx_model_path_2dfan4 2dfan4.onnx --copy./new_copied_images
+```
+
 简化命令(默认参数，处理单个文件夹)：
 ```bash
 python main.py /path/to/images 
@@ -61,15 +67,18 @@ python main.py /path/to/images
 3. **单独运行`file.py`（可选）**：如果您已经有了包含检测结果的JSON文件，也可以单独运行`file.py`来进行图像的删除或复制操作。支持以下参数：
     - `json_file_path`：可选参数，指定包含人脸检测结果的JSON文件路径，默认为`face.json`。
     - `--landmark_score`：可选参数，指定人脸关键点分数阈值，默认为`0.9`。
-    - `--target_path`：可选参数，指定复制图像的目标路径，默认为`./copied_images`，当复制操作开启时生效。
     - `--delete`：可选参数，指定是否根据人脸检测分数和人脸关键点分数删除不符合条件的图像，默认为不删除。
-    - `--copy`：可选参数，指定是否根据人脸关键点分数复制符合条件的图像到指定目录。
+    - `--copy`：可选参数，指定是否根据人脸关键点分数复制符合条件的图像到指定目录。可选择指定目标路径，默认目标路径为`./copied_images`。
 
-示例命令（删除原始目录不符合条件图像，复制符合条件图像到新目录）：
+示例命令（删除原始目录不符合条件图像，复制符合条件图像到默认目录）：
 ```bash
-python file.py --landmark_score 0.8 --delete --copy --target_path./new_copied_images
+python file.py --landmark_score 0.8 --delete --copy
 ```
-此命令会使用默认的`face.json`文件，根据`0.8`的关键点分数阈值来删除不符合条件的图像，并将符合条件的图像复制到`./new_copied_images`目录。
+
+示例命令（删除原始目录不符合条件图像，复制符合条件图像到指定目录）：
+```bash
+python file.py --landmark_score 0.8 --delete --copy./new_copied_images
+```
 
 ## 代码架构
 ### main.py
