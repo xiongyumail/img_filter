@@ -154,13 +154,6 @@ def process_images_in_folder(folder_path: str, face_detector_size: str = '640x64
     for file_path, has_face in results:
         if has_face:
             face_image_paths.append(file_path)
-        elif delete_non_face:
-            try:
-                # 删除文件时支持中文路径
-                os.remove(file_path)
-                print(f"Deleted: {file_path}")
-            except Exception as e:
-                print(f"Error deleting {file_path}: {e}")
 
     if output_json:
         try:
@@ -169,6 +162,15 @@ def process_images_in_folder(folder_path: str, face_detector_size: str = '640x64
             print(f"Face image paths saved to {output_json}")
         except Exception as e:
             print(f"Error saving JSON file {output_json}: {e}")
+
+    if delete_non_face and output_json:
+        import subprocess
+        try:
+            # 调用删除脚本
+            subprocess.run(['python', 'delete_non_face.py', folder_path, '--face_image_json', output_json], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error running delete script: {e}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process images in a folder and either delete non-face images or output face image paths to a JSON file.')
