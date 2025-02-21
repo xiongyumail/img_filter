@@ -7,6 +7,7 @@ import json
 from typing import List, Tuple
 from collections import namedtuple
 import concurrent.futures
+import threading
 
 # 定义必要的类和函数
 VisionFrame = np.ndarray
@@ -14,10 +15,24 @@ BoundingBox = np.ndarray
 Score = float
 FaceLandmark5 = np.ndarray
 StateManager = namedtuple('StateManager', ['get_item'])
+Resolution = Tuple[int, int]
+Detection = np.ndarray
 
 # 初始化 ONNX 推理会话，避免每次检测都重新创建
 onnx_session = None
 input_name = None
+
+semaphore = threading.Semaphore(1)  # 控制并发线程数量
+
+class thread_semaphore:
+    def __enter__(self):
+        semaphore.acquire()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        semaphore.release()
+
+def get_inference_pool():
+    return {'yoloface': onnx_session}
 
 def init_onnx_session(onnx_model_path, provider, device_type):
     global onnx_session, input_name
@@ -25,46 +40,61 @@ def init_onnx_session(onnx_model_path, provider, device_type):
     onnx_session = ort.InferenceSession(onnx_model_path, providers=[provider], provider_options=provider_options)
     input_name = onnx_session.get_inputs()[0].name
 
-def unpack_resolution(resolution_str: str) -> Tuple[int, int]:
+def unpack_resolution(resolution: str) -> Resolution:
     """
     将分辨率字符串拆分为宽度和高度
-    :param resolution_str: 分辨率字符串，格式为 'widthxheight'
+    :param resolution: 分辨率字符串，格式为 'widthxheight'
     :return: 宽度和高度的元组
     """
-    width, height = map(int, resolution_str.split('x'))
+    width, height = map(int, resolution.split('x'))
     return width, height
 
-def resize_frame_resolution(frame: VisionFrame, size: Tuple[int, int]) -> VisionFrame:
+def resize_frame_resolution(vision_frame: VisionFrame, max_resolution: Resolution) -> VisionFrame:
     """
     调整帧的分辨率
-    :param frame: 输入的帧
-    :param size: 目标大小，格式为 (width, height)
+    :param vision_frame: 输入的帧
+    :param max_resolution: 最大分辨率，格式为 (width, height)
     :return: 调整分辨率后的帧
     """
-    return cv2.resize(frame, size)
+    height, width = vision_frame.shape[:2]
+    max_width, max_height = max_resolution
 
-def prepare_detect_frame(frame: VisionFrame, size: Tuple[int, int]) -> np.ndarray:
+    if height > max_height or width > max_width:
+        scale = min(max_height / height, max_width / width)
+        new_width = int(width * scale)
+        new_height = int(height * scale)
+        return cv2.resize(vision_frame, (new_width, new_height))
+    return vision_frame
+
+def prepare_detect_frame(temp_vision_frame: VisionFrame, face_detector_size: str) -> VisionFrame:
     """
     准备用于检测的帧
-    :param frame: 输入的帧
-    :param size: 目标大小，格式为 (width, height)
+    :param temp_vision_frame: 输入的帧
+    :param face_detector_size: 人脸检测器的分辨率字符串
     :return: 准备好的帧
     """
-    # 这里简单归一化，实际可能需要根据模型要求调整
-    frame = frame.astype(np.float32) / 255.0
-    frame = np.transpose(frame, (2, 0, 1))
-    frame = np.expand_dims(frame, axis=0)
-    return frame
+    face_detector_width, face_detector_height = unpack_resolution(face_detector_size)
+    detect_vision_frame = np.zeros((face_detector_height, face_detector_width, 3))
+    detect_vision_frame[:temp_vision_frame.shape[0], :temp_vision_frame.shape[1], :] = temp_vision_frame
+    detect_vision_frame = (detect_vision_frame - 127.5) / 128.0
+    detect_vision_frame = np.expand_dims(detect_vision_frame.transpose(2, 0, 1), axis=0).astype(np.float32)
+    return detect_vision_frame
 
-def forward_with_yoloface(frame: np.ndarray) -> np.ndarray:
+def forward_with_yoloface(detect_vision_frame: VisionFrame) -> Detection:
     """
     使用 YOLOFace 模型进行前向推理
-    :param frame: 输入的帧
+    :param detect_vision_frame: 输入的帧
     :return: 模型输出
     """
-    global onnx_session, input_name
-    output = onnx_session.run(None, {input_name: frame})[0]
-    return output
+    face_detector = get_inference_pool().get('yoloface')
+
+    with thread_semaphore():
+        detection = face_detector.run(None,
+                                      {
+                                          input_name: detect_vision_frame
+                                      })
+
+    return detection
 
 def detect_with_yoloface(vision_frame: VisionFrame, face_detector_size: str, face_detector_score: float) -> Tuple[List[BoundingBox], List[Score], List[FaceLandmark5]]:
     """
@@ -81,7 +111,7 @@ def detect_with_yoloface(vision_frame: VisionFrame, face_detector_size: str, fac
     temp_vision_frame = resize_frame_resolution(vision_frame, (face_detector_width, face_detector_height))
     ratio_height = vision_frame.shape[0] / temp_vision_frame.shape[0]
     ratio_width = vision_frame.shape[1] / temp_vision_frame.shape[1]
-    detect_vision_frame = prepare_detect_frame(temp_vision_frame, (face_detector_width, face_detector_height))
+    detect_vision_frame = prepare_detect_frame(temp_vision_frame, face_detector_size)
     detection = forward_with_yoloface(detect_vision_frame)
     detection = np.squeeze(detection).T
     bounding_box_raw, score_raw, face_landmark_5_raw = np.split(detection, [4, 5], axis=1)
