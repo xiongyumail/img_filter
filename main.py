@@ -7,7 +7,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process images in one or more folders and save detection results to face.json.')
     parser.add_argument('--input_json', type=str, help='Path to the JSON file containing folder paths.')
     parser.add_argument('folder_path', type=str, nargs='*', help='Path to one or more folders containing images.')
-    parser.add_argument('--face_detector_size', type=str, default='640x640', help='Resolution for the face detector, in the format "widthxheight".')
+    parser.add_argument('--size_yoloface', type=str, default='640x640', help='Resolution for the YOLOFace detector, in the format "widthxheight".')
+    parser.add_argument('--size_2dfan4', type=str, default='256x256', help='Resolution for the 2DFAN4 detector, in the format "widthxheight".')
     parser.add_argument('--face_detector_score', type=float, default=0.7, help='Score threshold for face detection.')
     parser.add_argument('--output_json', type=str, default='face.json', help='Output JSON file path for detection results.')
     parser.add_argument('--onnx_provider', type=str, default="OpenVINOExecutionProvider", help='ONNX runtime provider.')
@@ -37,7 +38,7 @@ if __name__ == "__main__":
         exit(1)
 
     detector = FaceDetector(args.onnx_model_path_yoloface, args.onnx_model_path_2dfan4, args.onnx_provider, args.device_type)
-    detector.process_images_in_folder(folder_paths, args.face_detector_size, args.face_detector_score, args.output_json)
+    detector.process_images_in_folder(folder_paths, args.size_yoloface, args.size_2dfan4, args.face_detector_score, args.output_json)
 
     if args.delete or args.copy:
         target_path = args.copy if args.copy else './copied_images'
