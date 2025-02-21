@@ -6,7 +6,8 @@ import argparse
 
 def process_images_based_on_scores(json_file_path, landmark_score=0.9, target_path='./copied_images', delete=False, copy=False):
     try:
-        # 打开 JSON 文件并加载图像结果字典
+        # 将目标路径转换为绝对路径
+        target_path = os.path.abspath(target_path)
         with open(json_file_path, 'r', encoding='utf-8') as f:
             image_result_dict = json.load(f)
 
@@ -28,15 +29,17 @@ def process_images_based_on_scores(json_file_path, landmark_score=0.9, target_pa
 
             # 处理复制操作
             if copy and face_landmark_scores_68 and avg_landmark_score > landmark_score:
-                if not os.path.exists(target_path):
-                    os.makedirs(target_path)
-                relative_path = os.path.relpath(file_path, os.path.dirname(json_file_path))
-                target_dir = os.path.join(target_path, os.path.dirname(relative_path))
-                if not os.path.exists(target_dir):
-                    os.makedirs(target_dir)
+                # 获取源文件的上一级目录名
+                parent_dir_name = os.path.basename(os.path.dirname(file_path))
+                target_sub_dir = os.path.join(target_path, parent_dir_name)
+
+                if not os.path.exists(target_sub_dir):
+                    os.makedirs(target_sub_dir)
+
                 file_name = os.path.basename(file_path)
-                shutil.copy2(file_path, os.path.join(target_dir, file_name))
-                print(f"Copied {file_path} to {os.path.join(target_dir, file_name)}")
+                target_file_path = os.path.join(target_sub_dir, file_name)
+                shutil.copy2(file_path, target_file_path)
+                print(f"Copied {file_path} to {target_file_path}")
 
     except Exception as e:
         print(f"Error processing images: {e}")
