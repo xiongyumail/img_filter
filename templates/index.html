@@ -1,0 +1,329 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ category or "所有分类" }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin: 20px 0;
+            font-size: 1.8rem;
+        }
+
+        .category-select {
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .category-select select {
+            padding: 10px 45px 10px 20px;
+            border-radius: 25px;
+            border: 1px solid #ddd;
+            background-color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: auto;
+            min-width: 200px;
+            max-width: 90vw;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+        }
+
+        .category-select option {
+            white-space: nowrap;
+            padding-right: 30px;
+        }
+
+        .category-select select:hover {
+            border-color: #007bff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .image-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .image-container img {
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            max-width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+
+        .image-container img:hover {
+            transform: scale(1.05);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pagination a {
+            color: #333;
+            padding: 8px 16px;
+            text-decoration: none;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .pagination a:hover {
+            background-color: #ddd;
+        }
+
+        .pagination a[style*="background-color: #007bff"] {
+            pointer-events: none;
+            cursor: default;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .close {
+            float: right;
+            cursor: pointer;
+            font-size: 28px;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .info-item {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        .info-label {
+            color: #666;
+            min-width: 160px;
+            display: inline-block;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .view-all {
+            display: block;
+            text-align: center;
+            margin: 30px auto;
+            padding: 12px 25px;
+            background: #007bff;
+            color: white;
+            border-radius: 25px;
+            text-decoration: none;
+            width: fit-content;
+            transition: background-color 0.3s ease;
+        }
+
+        .view-all:hover {
+            background-color: #0056b3;
+            color: white;
+            text-decoration: none;
+        }
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.4rem;
+                padding: 0 10px;
+            }
+
+            .category-select select {
+                width: 100%;
+                max-width: 100%;
+                padding: 12px 45px 12px 15px;
+            }
+
+            .image-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .image-container img {
+                width: 100%;
+                max-width: 300px;
+                height: auto;
+                margin-bottom: 10px;
+            }
+
+            .pagination {
+                gap: 5px;
+                padding: 0 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ category or "所有分类" }}</h1>
+    <div class="category-select">
+        <select onchange="location = this.value;">
+            <option value="/all">所有分类</option>
+            {% for cat in all_categories %}
+            <option value="/{{ cat | urlencode }}" {% if cat == category %}selected{% endif %}>
+                {{ cat }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div class="image-container">
+        {% if images %}
+            {% for image in images %}
+            <img 
+                src="{{ url_for('serve_image', category=image.category, filename=image.filename) }}" 
+                alt="图片"
+                onclick="showImageInfo(
+                    '{{ image.path | replace("\\", "\\\\") }}',
+                    {{ image.face_scores | tojson }},
+                    {{ image.landmark_scores | tojson }}
+                )"
+                style="cursor: pointer;"
+                title="点击查看详细信息"
+            >
+            {% endfor %}
+        {% else %}
+            <p>此分类下暂无图片。</p>
+        {% endif %}
+    </div>
+    
+    <div class="pagination">
+        {% if current_page > 1 %}
+            {% if category %}
+                <a href="/{{ category | urlencode }}/1">首页</a>
+                <a href="/{{ category | urlencode }}/{{ current_page - 1 }}">上一页</a>
+            {% else %}
+                <a href="/all?page=1">首页</a>
+                <a href="/all?page={{ current_page - 1 }}">上一页</a>
+            {% endif %}
+        {% endif %}
+
+        {% for p in range(1, total_pages + 1) %}
+            {% if p >= current_page - 2 and p <= current_page + 2 %}
+                {% if category %}
+                    <a href="/{{ category | urlencode }}/{{ p }}" 
+                       {% if p == current_page %}style="background-color: #007bff; color: white;"{% endif %}>
+                        {{ p }}
+                    </a>
+                {% else %}
+                    <a href="/all?page={{ p }}" 
+                       {% if p == current_page %}style="background-color: #007bff; color: white;"{% endif %}>
+                        {{ p }}
+                    </a>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+
+        {% if current_page < total_pages %}
+            {% if category %}
+                <a href="/{{ category | urlencode }}/{{ current_page + 1 }}">下一页</a>
+                <a href="/{{ category | urlencode }}/{{ total_pages }}">尾页</a>
+            {% else %}
+                <a href="/all?page={{ current_page + 1 }}">下一页</a>
+                <a href="/all?page={{ total_pages }}">尾页</a>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <a href="/" class="view-all" style="margin-top: 15px;">查看分类目录</a>
+
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h3 style="margin:0;">图片详细信息</h3>
+            </div>
+            <div class="info-item">
+                <span class="info-label">完整路径：</span>
+                <span class="info-value" id="infoPath"></span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">人脸质量均分：</span>
+                <span class="info-value" id="infoFaceScore"></span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">特征点精度均分：</span>
+                <span class="info-value" id="infoLandmarkScore"></span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showImageInfo(path, faceScores, landmarkScores) {
+            const formatScore = (arr) => {
+                if (!arr || arr.length === 0) return '无可用数据';
+                const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
+                return avg.toFixed(4) + ` (${arr.length}个检测结果)`;
+            };
+    
+            document.getElementById('infoPath').textContent = path;
+            document.getElementById('infoFaceScore').textContent = formatScore(faceScores);
+            document.getElementById('infoLandmarkScore').textContent = formatScore(landmarkScores);
+            document.getElementById('infoModal').style.display = 'flex';
+        }
+    
+        function closeModal() {
+            document.getElementById('infoModal').style.display = 'none';
+        }
+    
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('infoModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>
