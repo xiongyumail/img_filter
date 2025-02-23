@@ -296,33 +296,90 @@
                 <span class="info-label">特征点精度均分：</span>
                 <span class="info-value" id="infoLandmarkScore"></span>
             </div>
+            <div class="info-item">
+                <button id="likeButton" onclick="likeImage()">收藏</button>
+            </div>
         </div>
     </div>
     
     <script>
+        // 从本地存储中获取收藏状态
+        function getLikedStatus(path) {
+            const likedImages = JSON.parse(localStorage.getItem('likedImages')) || {};
+            return likedImages[path] || false;
+        }
+
+        // 更新本地存储中的收藏状态
+        function updateLikedStatus(path, isLiked) {
+            const likedImages = JSON.parse(localStorage.getItem('likedImages')) || {};
+            likedImages[path] = isLiked;
+            localStorage.setItem('likedImages', JSON.stringify(likedImages));
+        }
+
         function showImageInfo(path, faceScores, landmarkScores) {
             const formatScore = (arr) => {
                 if (!arr || arr.length === 0) return '无可用数据';
                 const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
                 return avg.toFixed(4) + ` (${arr.length}个检测结果)`;
             };
-    
+
             document.getElementById('infoPath').textContent = path;
             document.getElementById('infoFaceScore').textContent = formatScore(faceScores);
             document.getElementById('infoLandmarkScore').textContent = formatScore(landmarkScores);
             document.getElementById('infoModal').style.display = 'flex';
+
+            const isLiked = getLikedStatus(path);
+            const likeButton = document.getElementById('likeButton');
+            likeButton.textContent = isLiked ? '取消收藏' : '收藏';
+
+            // 传递图片路径给 likeImage 函数
+            likeButton.onclick = function() {
+                likeImage(path);
+            };
         }
-    
+
         function closeModal() {
             document.getElementById('infoModal').style.display = 'none';
         }
-    
+
         // 点击模态框外部关闭
         window.onclick = function(event) {
             const modal = document.getElementById('infoModal');
             if (event.target === modal) {
                 closeModal();
             }
+        }
+
+        function likeImage(path) {
+            const button = document.getElementById('likeButton');
+            const isLiked = getLikedStatus(path);
+            const action = isLiked ? 'unlike' : 'like';
+
+            fetch('/like_image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    path: path,
+                    action: action  // 添加action参数
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const newIsLiked = data.action === 'like';
+                    updateLikedStatus(path, newIsLiked);
+                    button.textContent = newIsLiked ? '取消收藏' : '收藏';
+                    alert(data.action === 'like' ? '收藏成功' : '已取消收藏');
+                } else {
+                    alert('操作失败');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('操作失败');
+            });
         }
     </script>
 </body>
