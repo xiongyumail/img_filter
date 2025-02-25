@@ -3,7 +3,7 @@ import json
 import os
 import math
 from functools import lru_cache
-from flask import Flask, render_template, send_from_directory, abort, request, url_for, jsonify
+from flask import Flask, render_template, send_from_directory, abort, request, url_for, jsonify, Response
 from urllib.parse import quote, unquote
 import webbrowser
 import argparse
@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Display image information using Flask app.')
     parser.add_argument('--per_page', type=int, default=8, help='Number of items per page.')
     parser.add_argument('--input_json', type=str, default='face.json', help='Input JSON file path.')
-    parser.add_argument('--host', type=str, default='127.0.0.1', help='Flask server host.')  # 修正拼写错误
+    parser.add_argument('--host', type=str, default='127.0.0.1', help='Flask server host.')
     parser.add_argument('--port', type=int, default=5000, help='Flask server port.')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode.')
     return parser.parse_args()
@@ -187,7 +187,7 @@ def category_view(category: str, page: int) -> str:
     return render_category_view(page, current_category)
 
 @app.route('/like_image', methods=['POST'])
-def like_image() -> jsonify:
+def like_image() -> Response:
     global cached_raw_data
     try:
         data = request.get_json()
@@ -227,17 +227,6 @@ def like_image() -> jsonify:
     except Exception as e:
         app.logger.error(f"Like error: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
-
-# 新增异步保存函数
-def async_save_data(data: dict) -> None:
-    """异步保存数据到文件"""
-    with write_lock:  # 加写锁
-        try:
-            with open(app.config['JSON_PATH'], 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=4)
-        except Exception as e:
-            app.logger.error(f"Async save failed: {str(e)}")
-            # 可以添加重试逻辑
 
 @app.route('/shutdown', methods=['GET', 'POST'])
 def shutdown() -> str:
