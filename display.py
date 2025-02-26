@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Display image information using Flask app.')
     parser.add_argument('--per_page', type=int, default=8, help='Number of items per page.')
     parser.add_argument('--input_json', type=str, default='face.json', help='Input JSON file path.')
-    parser.add_argument('--host', type=str, default='127.0.0.1', help='Flask server host.')
+    parser.add_argument('--host', type=str, default='0.0.0.0', help='Flask server host.')
     parser.add_argument('--port', type=int, default=5000, help='Flask server port.')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode.')
     return parser.parse_args()
