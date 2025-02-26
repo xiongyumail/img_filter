@@ -50,10 +50,11 @@ class Paginator:
 
 # 新增数据保存消费者线程
 def save_consumer():
+    global save_thread_running
     while save_thread_running:
         try:
             data = save_queue.get(timeout=1)
-            with write_lock:
+            with data_lock:
                 with open(app.config['JSON_PATH'], 'w', encoding='utf-8') as f:
                     json.dump(data, f, ensure_ascii=False, indent=4)
             save_queue.task_done()
@@ -66,21 +67,17 @@ def save_consumer():
 save_consumer_thread = threading.Thread(target=save_consumer, daemon=True)
 save_consumer_thread.start()
 
-# 新增读写锁
-read_lock = threading.Lock()
-write_lock = threading.Lock()
-
 @lru_cache(maxsize=1)
 def load_image_data() -> Tuple[Dict[str, List[Dict]], Dict[str, str]]:
     global cached_raw_data
-    if cached_raw_data is None:
-        try:
-            with read_lock:
+    with data_lock:
+        if cached_raw_data is None:
+            try:
                 with open(app.config['JSON_PATH'], 'r', encoding='utf-8') as f:
                     cached_raw_data = json.load(f)
-        except Exception as e:
-            app.logger.error(f"Load initial data failed: {str(e)}")
-            return {}, {}
+            except Exception as e:
+                app.logger.error(f"Load initial data failed: {str(e)}")
+                return {}, {}
     
     # 原有数据处理逻辑
     category_map: Dict[str, List[Dict]] = {}
@@ -103,7 +100,7 @@ def load_image_data() -> Tuple[Dict[str, List[Dict]], Dict[str, str]]:
             'path': normalized,
             'face_scores': meta.get('face_scores', []),
             'landmark_scores': meta.get('face_landmark_scores_68', []),
-            'like': meta.get('like', False)  # 添加默认值
+            'like': meta.get('like', False)
         }
         
         category_map.setdefault(category, []).append(img_info)
@@ -200,9 +197,8 @@ def like_image() -> Response:
         with data_lock:
             # 延迟加载数据（如果未初始化）
             if cached_raw_data is None:
-                with read_lock:
-                    with open(app.config['JSON_PATH'], 'r', encoding='utf-8') as f:
-                        cached_raw_data = json.load(f)
+                with open(app.config['JSON_PATH'], 'r', encoding='utf-8') as f:
+                    cached_raw_data = json.load(f)
             
             if path not in cached_raw_data:
                 return jsonify({'success': False, 'message': 'Image not found'}), 404
@@ -232,17 +228,17 @@ def like_image() -> Response:
 def shutdown() -> str:
     global save_thread_running
     save_thread_running = False
+    # 等待保存队列完成
+    save_queue.join()
     shutdown_func = request.environ.get('werkzeug.server.shutdown')
     if shutdown_func:
         try:
-            shutdown_func()  # 尝试正常关闭
+            shutdown_func()
             return 'Server shutting down...'
         except Exception as e:
             app.logger.error(f"正常关闭失败: {e}")
-    
-    # 强制终止进程（终极方案）
-    os._exit(0)  # 立即退出，返回状态码 0
-    return 'Server forced to shutdown.'  # 此行实际不会执行
+    os._exit(0)
+    return 'Server forced to shutdown.'
 
 def input_listener() -> None:
     """监听用户输入"""
@@ -250,7 +246,7 @@ def input_listener() -> None:
     while True:
         if input().lower() == 'q':
             try:
-                requests.post(f'http://{args.host}:{args.port}/shutdown')
+                requests.post(f'http://127.0.0.1:{args.port}/shutdown')
             except Exception as e:
                 app.logger.error(f"Shutdown failed: {str(e)}")
             finally:
@@ -258,7 +254,7 @@ def input_listener() -> None:
 
 if __name__ == '__main__':
     # 启动浏览器
-    threading.Timer(1, lambda: webbrowser.open(f'http://{args.host}:{args.port}')).start()
+    threading.Timer(1, lambda: webbrowser.open(f'http://127.0.0.1:{args.port}')).start()
     
     # 启动输入监听
     input_thread = threading.Thread(target=input_listener, daemon=True)
