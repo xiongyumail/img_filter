@@ -1,15 +1,12 @@
 // static/js/main.js
 // 收藏功能相关
-const getLikedStatus = (path) => {
-    const likedImages = JSON.parse(localStorage.getItem('likedImages')) || {};
-    return likedImages[path] || false;
-};
-
-const updateLikedStatus = (path, isLiked) => {
-    const likedImages = JSON.parse(localStorage.getItem('likedImages')) || {};
-    likedImages[path] = isLiked;
-    localStorage.setItem('likedImages', JSON.stringify(likedImages));
-};
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.heart-icon').forEach(heart => {
+        const isLiked = heart.dataset.liked === 'true'; // 根据data属性设置初始状态
+        heart.classList.toggle('liked', isLiked);
+        heart.classList.toggle('unliked', !isLiked);
+    });
+});
 
 // 图片信息展示
 const showImageInfo = (path, faceScores, landmarkScores) => {
@@ -23,11 +20,6 @@ const showImageInfo = (path, faceScores, landmarkScores) => {
     document.getElementById('infoFaceScore').textContent = formatScore(faceScores);
     document.getElementById('infoLandmarkScore').textContent = formatScore(landmarkScores);
     document.getElementById('infoModal').style.display = 'flex';
-
-    const isLiked = getLikedStatus(path);
-    const likeButton = document.getElementById('likeButton');
-    likeButton.textContent = isLiked ? '取消收藏' : '收藏';
-    likeButton.onclick = () => likeImage(path);
 };
 
 // 模态框控制
@@ -41,10 +33,10 @@ window.onclick = (event) => {
 };
 
 // 收藏操作
-const likeImage = (path) => {
-    const button = document.getElementById('likeButton');
-    const isLiked = getLikedStatus(path);
-    const action = isLiked ? 'unlike' : 'like';
+const toggleLike = (event, path) => {
+    event.stopPropagation();
+    const heart = event.target;
+    const isLiked = heart.classList.contains('liked');
 
     fetch('/like_image', {
         method: 'POST',
@@ -53,15 +45,15 @@ const likeImage = (path) => {
         },
         body: JSON.stringify({ 
             path: path,
-            action: action
+            action: isLiked ? 'unlike' : 'like' // 根据当前状态切换动作
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            const newIsLiked = data.action === 'like';
-            updateLikedStatus(path, newIsLiked);
-            button.textContent = newIsLiked ? '取消收藏' : '收藏';
+            // 直接切换类，不操作localStorage
+            heart.classList.toggle('liked');
+            heart.classList.toggle('unliked');
             alert(data.action === 'like' ? '收藏成功' : '已取消收藏');
         } else {
             alert('操作失败');

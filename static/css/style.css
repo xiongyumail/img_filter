@@ -1,8 +1,17 @@
 /* static/css/style.css */
+/* 定义变量 */
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #ddd;
+    --text-color: #333;
+    --subtext-color: #666;
+    --bg-color: #f4f4f9;
+}
+
 /* 基础样式 */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f4f9;
+    background-color: var(--bg-color);
     margin: 0;
     padding: 0;
 }
@@ -10,7 +19,7 @@ body {
 /* 标题 */
 .page-title {
     text-align: center;
-    color: #333;
+    color: var(--text-color);
     margin: 20px 0;
     font-size: 1.8rem;
 }
@@ -24,7 +33,7 @@ body {
 .category-dropdown {
     padding: 10px 45px 10px 20px;
     border-radius: 25px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--secondary-color);
     background-color: white;
     font-size: 1rem;
     cursor: pointer;
@@ -40,7 +49,7 @@ body {
 }
 
 .category-dropdown:hover {
-    border-color: #007bff;
+    border-color: var(--primary-color);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -77,20 +86,20 @@ body {
 }
 
 .page-link {
-    color: #333;
+    color: var(--text-color);
     padding: 8px 16px;
     text-decoration: none;
-    border: 1px solid #ddd;
+    border: 1px solid var(--secondary-color);
     border-radius: 5px;
     transition: background-color 0.3s ease;
 }
 
 .page-link:hover {
-    background-color: #ddd;
+    background-color: var(--secondary-color);
 }
 
 .page-link.active {
-    background-color: #007bff;
+    background-color: var(--primary-color);
     color: white;
 }
 
@@ -118,7 +127,7 @@ body {
 }
 
 .modal-header {
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--secondary-color);
     padding-bottom: 15px;
     margin-bottom: 15px;
 }
@@ -128,11 +137,11 @@ body {
     cursor: pointer;
     font-size: 28px;
     font-weight: bold;
-    color: #666;
+    color: var(--subtext-color);
 }
 
 .close:hover {
-    color: #333;
+    color: var(--text-color);
 }
 
 /* 信息项 */
@@ -142,13 +151,13 @@ body {
 }
 
 .info-label {
-    color: #666;
+    color: var(--subtext-color);
     min-width: 160px;
     display: inline-block;
 }
 
 .info-value {
-    color: #333;
+    color: var(--text-color);
     font-weight: 500;
 }
 
@@ -158,7 +167,7 @@ body {
     text-align: center;
     margin: 30px auto;
     padding: 12px 25px;
-    background: #007bff;
+    background: var(--primary-color);
     color: white;
     border-radius: 25px;
     text-decoration: none;
@@ -170,18 +179,38 @@ body {
     background-color: #0056b3;
 }
 
-.like-btn {
-    padding: 8px 16px;
-    background: #28a745;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+/* 新增爱心样式 */
+.image-wrapper {
+    position: relative;
+    display: inline-block;
 }
 
-.like-btn:hover {
-    background-color: #218838;
+.heart-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    cursor: pointer;
+    text-shadow: 0 0 5px rgba(0,0,0,0.3); /* 调整阴影增强可视性 */
+    transition: all 0.2s;
+    background-color: rgba(0, 0, 0, 0.3); /* 新增半透明背景 */
+    border-radius: 50%;
+    padding: 2px 5px;
+}
+
+.heart-icon.liked {
+    color: rgba(255, 0, 0, 0.8); /* 红色半透明 */
+    background-color: rgba(0, 0, 0, 0.3); /* 保持背景透明度 */
+}
+
+.heart-icon.unliked {
+    color: rgba(255, 255, 255, 0.8); /* 白色半透明 */
+    background-color: rgba(0, 0, 0, 0.3); /* 统一背景 */
+}
+
+.heart-icon:hover {
+    transform: scale(1.1);
+    background-color: rgba(0, 0, 0, 0.5); /* 悬停时背景加深 */
 }
 
 /* 响应式设计 */
@@ -217,6 +246,6 @@ body {
 
 .empty-message {
     text-align: center;
-    color: #666;
+    color: var(--subtext-color);
     margin: 20px 0;
 }
