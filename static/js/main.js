@@ -1,10 +1,28 @@
 // static/js/main.js
 // 收藏功能相关
 document.addEventListener('DOMContentLoaded', () => {
+    // 初始化收藏状态
     document.querySelectorAll('.heart-icon').forEach(heart => {
-        const isLiked = heart.dataset.liked === 'true'; // 根据data属性设置初始状态
+        const isLiked = heart.dataset.liked === 'true';
         heart.classList.toggle('liked', isLiked);
         heart.classList.toggle('unliked', !isLiked);
+    });
+
+    // 处理图片加载
+    document.querySelectorAll('.image-item').forEach(img => {
+        const wrapper = img.closest('.image-wrapper');
+        
+        const handleLoad = () => {
+            wrapper.classList.add('loaded');
+            wrapper.querySelector('.heart-icon').style.visibility = 'visible'; // 显式设置可见
+        };
+
+        if (img.complete) {
+            handleLoad();
+        } else {
+            img.addEventListener('load', handleLoad);
+            img.addEventListener('error', handleLoad); // 容错处理
+        }
     });
 });
 

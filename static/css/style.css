@@ -183,6 +183,12 @@ body {
 .image-wrapper {
     position: relative;
     display: inline-block;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.image-wrapper.loaded {
+    opacity: 1;
 }
 
 .heart-icon {
@@ -196,6 +202,7 @@ body {
     background-color: rgba(0, 0, 0, 0.3); /* 新增半透明背景 */
     border-radius: 50%;
     padding: 2px 5px;
+    visibility: hidden;
 }
 
 .heart-icon.liked {
@@ -206,6 +213,10 @@ body {
 .heart-icon.unliked {
     color: rgba(255, 255, 255, 0.8); /* 白色半透明 */
     background-color: rgba(0, 0, 0, 0.3); /* 统一背景 */
+}
+
+.image-wrapper.loaded .heart-icon {
+    visibility: visible; /* 图片加载后显示 */
 }
 
 .heart-icon:hover {
