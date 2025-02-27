@@ -1,0 +1,3 @@
+[submodule "img_display"]
+	path = img_display
+	url = https://github.com/xiongyumail/img_display.git
