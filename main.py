@@ -1,6 +1,7 @@
 import argparse
 import json
-import subprocess  # 新增导入，用于启动 display.py 脚本
+import os
+import subprocess
 from face_detector import FaceDetector
 from file import process_images_based_on_scores
 
@@ -21,7 +22,7 @@ if __name__ == "__main__":
     parser.add_argument('--copy', nargs='?', const='./copied_images', type=str,
                         help='Copy images based on face landmark scores. Optionally specify the target path.')
     parser.add_argument('--landmark_score', type=float, default=0.9, help='Threshold for face landmark scores.')
-    parser.add_argument('--display', action='store_true', help='Display processed image information using Flask app.')  # 新增 --display 选项
+    parser.add_argument('--display', action='store_true', help='Display processed image information using Flask app.')
 
     args = parser.parse_args()
 
@@ -62,6 +63,7 @@ if __name__ == "__main__":
 
     if args.display:  # 检查 --display 选项是否被设置
         try:
-            subprocess.run(["python", "display.py", "--input_json", args.output_json], check=True)  # 启动 display.py 脚本
+            # 更新为调用子模块中的 display.py
+            subprocess.run(["python", "img_display/display.py", "--input_json", os.path.abspath(args.output_json)], check=True)
         except subprocess.CalledProcessError as e:
-            print(f"Error: Failed to start display.py. Error: {e}")
+            print(f"Error: Failed to start img_display/display.py. Error: {e}")
