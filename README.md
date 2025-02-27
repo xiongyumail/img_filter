@@ -1,5 +1,5 @@
-# IMG_FACEDETECTOR 
-`img_facedetector`是一款基于Python开发的功能强大的图像人脸检测工具，借助ONNX运行时和YOLOFace模型，能以极高的精度检测图像中的人脸。它不仅能处理单张图像，还能批量处理多个文件夹内的图像。根据检测结果，用户可以选择删除未检测到人脸的图像，也可以将检测到人脸的图像路径输出到JSON文件中。在实际测试中，搭配Intel Arc B580显卡并结合`onnxruntime-openvino`，能实现极为高效的推理性能，大幅提升检测效率。
+# IMG_FILTER 
+`IMG_FILTER`是一款基于Python开发的功能强大的图像人脸检测工具，借助ONNX运行时和YOLOFace模型，能以极高的精度检测图像中的人脸。它不仅能处理单张图像，还能批量处理多个文件夹内的图像。根据检测结果，用户可以选择删除未检测到人脸的图像，也可以将检测到人脸的图像路径输出到JSON文件中。在实际测试中，搭配Intel Arc B580显卡并结合`onnxruntime-openvino`，能实现极为高效的推理性能，大幅提升检测效率。
 
 ## 功能亮点
 - **高效人脸检测**：依托YOLOFace模型与ONNX运行时，能迅速且精准地检测图像中的人脸，满足安防监控、图像分析、人脸识别等各类场景的检测需求。
@@ -51,6 +51,7 @@ pip install onnxruntime-openvino
     - `--copy`：可选参数，指定是否根据人脸关键点分数复制符合条件的图像到指定目录。可选择指定目标路径，默认目标路径为`./copied_images`。（注意使用双引号）
     - `--landmark_score`：可选参数，指定人脸关键点分数阈值，默认为`0.9`，当`--delete`或`--copy`选项开启时生效。
     - `--display`：可选参数，指定是否使用Flask应用展示处理后的图像信息。开启后会自动启动Flask应用，并在浏览器中打开展示页面。
+    - `--output_full_data`：可选参数，指定是否输出完整数据包括边界框和关键点，默认是`False`。
 示例命令（使用Intel显卡，删除不符合条件图像，复制符合条件图像到默认目录，处理多个文件夹，展示图像信息）：
 ```bash
 python main.py "/path/to/images1" "/path/to/images2" --size_yoloface 640x640 --size_2dfan4 256x256 --face_detector_score 0.7 --delete --landmark_score 0.9 --output_json face.json --onnx_provider OpenVINOExecutionProvider --device_type GPU --onnx_model_path_yoloface yoloface_8n.onnx --onnx_model_path_2dfan4 2dfan4.onnx --copy --display
@@ -86,17 +87,22 @@ python file.py --landmark_score 0.8 --delete --copy "./new_copied_images"
     - **类型安全增强**：添加了`VisionFrame`、`BoundingBox`、`Score`等类型别名，提高代码的可读性和类型安全性，使得代码在处理相关数据时更加清晰和健壮。
     - **初始化逻辑调整**：`FaceDetector`类的`__init__`方法中，移除了`self.onnx_session`和`self.input_name`的直接初始化，改为使用`InferencePool`来管理模型会话，使得代码结构更加模块化和可维护。
     - **方法功能细化与注释完善**：多个方法添加了详细的文档字符串，包括`get_inference_pool`、`unpack_resolution`、`resize_frame_resolution`等，解释了方法的功能、参数和返回值，方便开发者理解和使用。同时，部分方法的参数名进行了修改，如`face_detector_size`改为`size_yoloface`，使参数含义更加明确。
+    - **新增参数**：`process_images_in_folder`方法新增`output_full_data`参数，用于控制是否输出完整数据，增加了灵活性。
 2. **`inference_utils.py`**：
     - **独立初始化函数**：新增`init_onnx_session`函数，将初始化ONNX会话的逻辑封装起来，便于复用和维护，同时添加了详细的文档字符串说明其功能、参数和返回值。
     - **`InferencePool`类重构**：`InferencePool`类的`__init__`方法进行了重构，添加了详细的文档字符串，解释各个参数的含义。调用`init_onnx_session`方法来初始化`yoloface`和`2dfan4`模型的会话，并在`pool`字典中存储`yoloface`会话和输入名称的元组，使得模型管理更加清晰。`get`方法也添加了文档字符串，解释其功能和返回值。
     - **函数注释补充**：`conditional_thread_semaphore`和`transform_points`函数添加了文档字符串，解释函数的功能、参数和返回值，提高代码的可读性。
 3. **`main.py`**：
-    - **参数解析更新**：`--face_detector_size`参数改为`--size_yoloface`，并新增`--size_2dfan4`参数，分别用于指定YOLOFace和2DFAN4模型的输入尺寸，使参数设置更加明确和灵活。
-    - **函数调用适配**：`detector.process_images_in_folder`方法的调用参数相应修改为`args.size_yoloface`和`args.size_2dfan4`，以适配代码中参数名的变更。
+    - **参数解析更新**：`--face_detector_size`参数改为`--size_yoloface`，并新增`--size_2dfan4`参数，分别用于指定YOLOFace和2DFAN4模型的输入尺寸，使参数设置更加明确和灵活。同时新增`--output_full_data`参数，用于控制是否输出完整数据。
+    - **函数调用适配**：`detector.process_images_in_folder`方法的调用参数相应修改为`args.size_yoloface`和`args.size_2dfan4`，以适配代码中参数名的变更，并传入`args.output_full_data`参数。
     - **新增功能支持**：新增`--display`参数，用于控制是否启动Flask应用展示图像信息，并在代码中添加相应逻辑，通过`subprocess`启动`display.py`脚本。
 4. **`display.py`**：
     - **新增文件**：新增`display.py`文件，用于基于Flask搭建Web应用展示图像信息。实现了图像数据加载、分类处理、分页展示、图像详情查看等功能，并通过命令行参数配置应用的运行参数。
     - **模板文件**：新增`templates`目录下的`404.html`、`categories.html`、`index.html`模板文件，用于定义Web页面的布局和样式，实现页面的展示效果和交互功能。
+    - **新增功能**：新增点赞功能，可对图片进行点赞或取消点赞操作，状态会实时更新；新增了关闭服务器的功能，可以通过`/shutdown`接口关闭Flask应用。
+5. **新增文件**：
+    - **静态资源**：新增`static/css/categories.css`和`static/css/style.css`文件，分别用于定义分类页面和图像展示页面的样式，增强了页面的美观性和用户体验。
+    - **JavaScript脚本**：新增`static/js/main.js`文件，用于实现点赞功能的交互逻辑，包括点赞状态的初始化、图片加载时的处理以及点赞操作的发送和反馈。
 
 ## 注意要点
 1. **模型兼容性**：确保使用的ONNX模型与代码兼容，模型的输入输出格式与代码中的处理逻辑保持一致，避免因格式不匹配导致错误。
@@ -105,5 +111,7 @@ python file.py --landmark_score 0.8 --delete --copy "./new_copied_images"
 4. **检测阈值**：根据实际应用场景，灵活调整`--face_detector_score`和`--landmark_score`参数，平衡检测的准确性和召回率，满足不同场景下的检测精度要求。
 5. **驱动更新**：定期更新Intel显卡驱动程序，确保显卡性能的稳定性和兼容性，充分发挥显卡的最佳性能。
 6. **Flask应用配置**：在使用Flask展示图像信息时，注意配置`--per_page`、`--input_json`等参数，确保展示的数据和页面布局符合需求。若遇到问题，可通过调试模式（`--debug`参数）排查错误。
+7. **点赞功能**：使用点赞功能时，确保网络连接正常，以便点赞状态能够及时更新和保存。
+8. **关闭服务器**：通过`/shutdown`接口关闭服务器时，确保已经保存好所有需要的数据，避免数据丢失。
 
-希望这款工具能助力您快速高效地进行图像人脸检测！若它对您有所帮助，欢迎为我们的项目点个Star，您的支持是我们前进的动力！ 
+希望这款工具能助力您快速高效地进行图像人脸检测！若它对您有所帮助，欢迎为我们的项目点个Star，您的支持是我们前进的动力！
