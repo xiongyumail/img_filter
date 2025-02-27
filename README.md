@@ -35,7 +35,7 @@ pip install onnxruntime-openvino
 同时，务必确保系统已安装Intel显卡驱动程序，以保障显卡正常工作。可前往[Intel官方网站](https://www.intel.com/content/www/us/en/download-center/home.html)下载并安装最新的显卡驱动。
 
 ## 使用步骤
-1. **下载ONNX模型**：获取`yoloface_8n.onnx`和`2dfan4.onnx`模型文件，并放置在正确路径下。可从模型官方来源获取。
+1. ​**下载ONNX模型**：获取`yoloface_8n.onnx`和`2dfan4.onnx`模型文件，并放置在项目目录下的`models`文件夹中。
 2. **运行`main.py`**：通过命令行运行工具，支持以下参数：
     - `--input_json`：可选参数，指定包含文件夹路径的JSON文件路径。
     - `folder_path`：可选参数，可指定一个或多个包含图像的文件夹路径。若不指定`--input_json`，则此参数为必填。（注意使用双引号）
@@ -45,8 +45,8 @@ pip install onnxruntime-openvino
     - `--output_json`：可选参数，指定输出人脸图片路径的JSON文件路径，默认为`face.json`。
     - `--onnx_provider`：可选参数，指定ONNX运行时的提供者，若使用Intel显卡，建议设置为`OpenVINOExecutionProvider`，默认为`OpenVINOExecutionProvider`。
     - `--device_type`：可选参数，指定提供者的设备类型，若使用Intel显卡，设置为`GPU`，默认为`GPU`。
-    - `--onnx_model_path_yoloface`：可选参数，指定YOLOFace ONNX模型的路径，默认为`yoloface_8n.onnx`。
-    - `--onnx_model_path_2dfan4`：可选参数，指定2DFAN4 ONNX模型的路径，默认为`2dfan4.onnx`。
+    - `--onnx_model_path_yoloface`：可选参数，指定YOLOFace ONNX模型的路径，默认为`models/yoloface_8n.onnx`。
+    - `--onnx_model_path_2dfan4`：可选参数，指定2DFAN4 ONNX模型的路径，默认为`models/2dfan4.onnx`。
     - `--delete`：可选参数，指定是否根据人脸检测分数和人脸关键点分数删除不符合条件的图像，默认为不删除。
     - `--copy`：可选参数，指定是否根据人脸关键点分数复制符合条件的图像到指定目录。可选择指定目标路径，默认目标路径为`./copied_images`。（注意使用双引号）
     - `--landmark_score`：可选参数，指定人脸关键点分数阈值，默认为`0.9`，当`--delete`或`--copy`选项开启时生效。
@@ -54,11 +54,11 @@ pip install onnxruntime-openvino
     - `--output_full_data`：可选参数，指定是否输出完整数据包括边界框和关键点，默认是`False`。
 示例命令（使用Intel显卡，删除不符合条件图像，复制符合条件图像到默认目录，处理多个文件夹，展示图像信息）：
 ```bash
-python main.py "/path/to/images1" "/path/to/images2" --size_yoloface 640x640 --size_2dfan4 256x256 --face_detector_score 0.7 --delete --landmark_score 0.9 --output_json face.json --onnx_provider OpenVINOExecutionProvider --device_type GPU --onnx_model_path_yoloface yoloface_8n.onnx --onnx_model_path_2dfan4 2dfan4.onnx --copy --display
+python main.py "/path/to/images1" "/path/to/images2" --size_yoloface 640x640 --size_2dfan4 256x256 --face_detector_score 0.7 --delete --landmark_score 0.9 --output_json face.json --onnx_provider OpenVINOExecutionProvider --device_type GPU --onnx_model_path_yoloface models/yoloface_8n.onnx --onnx_model_path_2dfan4 models/2dfan4.onnx --copy --display
 ```
 示例命令（使用Intel显卡，删除不符合条件图像，复制符合条件图像到指定目录，通过JSON文件指定文件夹路径，展示图像信息）：
 ```bash
-python main.py --input_json folders.json --size_yoloface 640x640 --size_2dfan4 256x256 --face_detector_score 0.7 --delete --landmark_score 0.9 --output_json face.json --onnx_provider OpenVINOExecutionProvider --device_type GPU --onnx_model_path_yoloface yoloface_8n.onnx --onnx_model_path_2dfan4 2dfan4.onnx --copy "./new_copied_images" --display
+python main.py --input_json folders.json --size_yoloface 640x640 --size_2dfan4 256x256 --face_detector_score 0.7 --delete --landmark_score 0.9 --output_json face.json --onnx_provider OpenVINOExecutionProvider --device_type GPU --onnx_model_path_yoloface models/yoloface_8n.onnx --onnx_model_path_2dfan4 models/2dfan4.onnx --copy "./new_copied_images" --display
 ```
 简化命令(默认参数，处理单个文件夹，展示图像信息)：
 ```bash

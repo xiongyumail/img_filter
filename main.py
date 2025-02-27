@@ -16,8 +16,8 @@ if __name__ == "__main__":
     parser.add_argument('--output_full_data', action='store_true', help='Output full data including bounding boxes and landmarks. Default is False.')
     parser.add_argument('--onnx_provider', type=str, default="OpenVINOExecutionProvider", help='ONNX runtime provider.')
     parser.add_argument('--device_type', type=str, default="GPU", help='Device type for the provider.')
-    parser.add_argument('--onnx_model_path_yoloface', type=str, default='yoloface_8n.onnx', help='Path to the YOLOFace ONNX model.')
-    parser.add_argument('--onnx_model_path_2dfan4', type=str, default='2dfan4.onnx', help='Path to the 2DFAN4 ONNX model.')
+    parser.add_argument('--onnx_model_path_yoloface', type=str, default='models/yoloface_8n.onnx', help='Path to the YOLOFace ONNX model.')
+    parser.add_argument('--onnx_model_path_2dfan4', type=str, default='models/2dfan4.onnx', help='Path to the 2DFAN4 ONNX model.')
     parser.add_argument('--delete', action='store_true', help='Delete images based on face scores and landmark scores.')
     parser.add_argument('--copy', nargs='?', const='./copied_images', type=str,
                         help='Copy images based on face landmark scores. Optionally specify the target path.')
