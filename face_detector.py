@@ -4,6 +4,7 @@ import numpy as np
 import json
 import concurrent.futures
 import threading
+import datetime
 from typing import List, Tuple
 from inference_utils import InferencePool, conditional_thread_semaphore, transform_points
 from image_utils import conditional_optimize_contrast, warp_face_by_translation, create_rotated_matrix_and_size
@@ -204,7 +205,7 @@ class FaceDetector:
 
     def process_images_in_folder(self, folder_paths: List[str], size_yoloface: str = '640x640', size_2dfan4: str = '256x256', face_detector_score: float = 0.5, output_json: str = 'face.json', output_full_data: bool = False):
         """
-        处理多个文件夹中的图像，进行人脸检测和关键点检测，并将结果保存到 JSON 文件中。
+        处理多个文件夹中的图像，进行人脸检测和关键点检测，生成包含版本和日期信息的检测结果，并将结果保存到 JSON 文件中。
         :param folder_paths: 文件夹路径列表
         :param size_yoloface: YOLOFace 模型的输入尺寸，格式为 'widthxheight'
         :param size_2dfan4: 2DFAN4 模型的输入尺寸，格式为 'widthxheight'
@@ -212,21 +213,35 @@ class FaceDetector:
         :param output_json: 保存检测结果的 JSON 文件路径
         :param output_full_data: 是否输出完整数据，默认为False
         """
+        # 初始化带元数据的结果字典
+        image_result_dict = {
+            "version": "2",
+            "date_created": datetime.datetime.now().astimezone().isoformat(),
+            "date_updated": None,
+            "img": {}
+        }
+        
+        # 遍历文件夹获取所有图像文件
         image_files = []
-        # 遍历多个文件夹路径
         for folder_path in folder_paths:
             for root, _, files in os.walk(folder_path):
                 for file in files:
                     if file.lower().endswith(('.png', '.jpg', '.jpeg')):
                         image_files.append(os.path.join(root, file))
-
-        image_result_dict = {}
+        
+        # 并发处理图像
         with concurrent.futures.ThreadPoolExecutor() as executor:
             results = list(executor.map(lambda file: (file, self.process_single_image(file, size_yoloface, size_2dfan4, face_detector_score)), image_files))
-
+        
+        # 填充检测结果到img字段
+        img_data = image_result_dict["img"]
         for file_path, (bounding_boxes, face_scores, face_landmarks_5, face_landmarks_68, face_landmark_scores_68) in results:
+            dir_path = os.path.dirname(file_path)
+            file_name = os.path.basename(file_path)
+            if dir_path not in img_data:
+                img_data[dir_path] = {}
             if output_full_data:
-                image_result_dict[file_path] = {
+                img_data[dir_path][file_name] = {
                     'bounding_boxes': [box.tolist() for box in bounding_boxes],
                     'face_scores': face_scores,
                     'face_landmarks_5': [landmark.tolist() for landmark in face_landmarks_5],
@@ -234,11 +249,15 @@ class FaceDetector:
                     'face_landmark_scores_68': face_landmark_scores_68
                 }
             else:
-                image_result_dict[file_path] = {
+                img_data[dir_path][file_name] = {
                     'face_scores': face_scores,
                     'face_landmark_scores_68': face_landmark_scores_68
                 }
-
+        
+        # 更新最后修改时间
+        image_result_dict["date_updated"] = datetime.datetime.now().astimezone().isoformat()
+        
+        # 保存结果到JSON文件
         if output_json:
             try:
                 with open(output_json, 'w', encoding='utf-8') as f:
