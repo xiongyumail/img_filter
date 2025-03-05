@@ -3,6 +3,7 @@ import json
 import shutil
 import argparse
 from collections import defaultdict
+from datetime import datetime  # 添加导入
 
 def save_output_json(results, output_json: str = 'face.json', output_full_data: bool = False):
     """
@@ -14,7 +15,7 @@ def save_output_json(results, output_json: str = 'face.json', output_full_data: 
         drive = os.path.splitdrive(abs_path)[0]
         drive_groups[drive].append((abs_path, data))
 
-    final_output = {}
+    img_data = {}
 
     for drive, files in drive_groups.items():
         abs_paths = [fp for fp, _ in files]
@@ -49,11 +50,20 @@ def save_output_json(results, output_json: str = 'face.json', output_full_data: 
         normalized_prefix = common_prefix.replace('\\', '/')
         if not normalized_prefix.endswith('/'):
             normalized_prefix += '/'
-        final_output[normalized_prefix] = path_tree
+        img_data[normalized_prefix] = path_tree
+
+    # 创建包含新结构的数据
+    current_time = datetime.now().astimezone().isoformat()
+    output_data = {
+        "version": "3",
+        "date_created": current_time,
+        "date_updated": current_time,
+        "img": img_data
+    }
 
     try:
         with open(output_json, 'w', encoding='utf-8') as f:
-            json.dump(final_output, f, indent=4, ensure_ascii=False)
+            json.dump(output_data, f, indent=4, ensure_ascii=False)
         print(f"results saved to {output_json}")
     except Exception as e:
         print(f"Error saving JSON: {str(e)}")
@@ -63,6 +73,7 @@ def process_images_based_on_scores(output_json, landmark_score=0.9, target_path=
     try:
         with open(output_json, 'r', encoding='utf-8') as f:
             data = json.load(f)
+            img_data = data.get('img', {})  # 获取img字段内容
         
         files_to_process = []
 
@@ -75,7 +86,7 @@ def process_images_based_on_scores(output_json, landmark_score=0.9, target_path=
                     else:
                         walk_tree(value, norm_base, new_rel_path)
 
-        for base_path, subtree in data.items():
+        for base_path, subtree in img_data.items():  # 遍历img_data而不是data
             norm_base = os.path.normpath(base_path)
             walk_tree(subtree, norm_base)
 
