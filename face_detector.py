@@ -1,7 +1,6 @@
 import os
 import cv2
 import numpy as np
-import json
 import concurrent.futures
 import threading
 from typing import List, Tuple
@@ -202,15 +201,13 @@ class FaceDetector:
             print(f"Error processing {file_path}: {e}")
         return [], [], [], [], []
 
-    def process_images_in_folder(self, folder_paths: List[str], size_yoloface: str = '640x640', size_2dfan4: str = '256x256', face_detector_score: float = 0.5, output_json: str = 'face.json', output_full_data: bool = False):
+    def process_images(self, folder_paths: List[str], size_yoloface: str = '640x640', size_2dfan4: str = '256x256', face_detector_score: float = 0.5):
         """
-        处理多个文件夹中的图像，进行人脸检测和关键点检测，并将结果保存到 JSON 文件中。
+        处理多个文件夹中的图像，进行人脸检测和关键点检测。
         :param folder_paths: 文件夹路径列表
         :param size_yoloface: YOLOFace 模型的输入尺寸，格式为 'widthxheight'
         :param size_2dfan4: 2DFAN4 模型的输入尺寸，格式为 'widthxheight'
         :param face_detector_score: 人脸检测的分数阈值
-        :param output_json: 保存检测结果的 JSON 文件路径
-        :param output_full_data: 是否输出完整数据，默认为False
         """
         image_files = []
         # 遍历多个文件夹路径
@@ -224,25 +221,4 @@ class FaceDetector:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             results = list(executor.map(lambda file: (file, self.process_single_image(file, size_yoloface, size_2dfan4, face_detector_score)), image_files))
 
-        for file_path, (bounding_boxes, face_scores, face_landmarks_5, face_landmarks_68, face_landmark_scores_68) in results:
-            if output_full_data:
-                image_result_dict[file_path] = {
-                    'bounding_boxes': [box.tolist() for box in bounding_boxes],
-                    'face_scores': face_scores,
-                    'face_landmarks_5': [landmark.tolist() for landmark in face_landmarks_5],
-                    'face_landmarks_68': [landmark.tolist() for landmark in face_landmarks_68],
-                    'face_landmark_scores_68': face_landmark_scores_68
-                }
-            else:
-                image_result_dict[file_path] = {
-                    'face_scores': face_scores,
-                    'face_landmark_scores_68': face_landmark_scores_68
-                }
-
-        if output_json:
-            try:
-                with open(output_json, 'w', encoding='utf-8') as f:
-                    json.dump(image_result_dict, f, indent=4, ensure_ascii=False)
-                print(f"Detection results saved to {output_json}")
-            except Exception as e:
-                print(f"Error saving JSON file {output_json}: {e}")
+        return results

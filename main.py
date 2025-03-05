@@ -3,7 +3,7 @@ import json
 import os
 import subprocess
 from face_detector import FaceDetector
-from file import process_images_based_on_scores
+from file import process_images_based_on_scores, save_output_json
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process images in one or more folders and save detection results to face.json.')
@@ -42,11 +42,15 @@ if __name__ == "__main__":
         exit(1)
 
     detector = FaceDetector(args.onnx_model_path_yoloface, args.onnx_model_path_2dfan4, args.onnx_provider, args.device_type)
-    detector.process_images_in_folder(
+    score_results = detector.process_images(
         folder_paths, 
         size_yoloface=args.size_yoloface,
         size_2dfan4=args.size_2dfan4,
-        face_detector_score=args.face_detector_score,
+        face_detector_score=args.face_detector_score
+    )
+
+    save_output_json(
+        results=score_results,
         output_json=args.output_json,
         output_full_data=args.output_full_data
     )

@@ -3,11 +3,40 @@ import json
 import shutil
 import argparse
 
+def save_output_json(results, output_json: str = 'face.json', output_full_data: bool = False):
+    """
+    将结果保存到 JSON 文件中。
+    :param output_json: 保存检测结果的 JSON 文件路径
+    :param output_full_data: 是否输出完整数据，默认为False
+    """
+    image_result_dict = {}
+    for file_path, (bounding_boxes, face_scores, face_landmarks_5, face_landmarks_68, face_landmark_scores_68) in results:
+        if output_full_data:
+            image_result_dict[file_path] = {
+                'bounding_boxes': [box.tolist() for box in bounding_boxes],
+                'face_scores': face_scores,
+                'face_landmarks_5': [landmark.tolist() for landmark in face_landmarks_5],
+                'face_landmarks_68': [landmark.tolist() for landmark in face_landmarks_68],
+                'face_landmark_scores_68': face_landmark_scores_68
+            }
+        else:
+            image_result_dict[file_path] = {
+                'face_scores': face_scores,
+                'face_landmark_scores_68': face_landmark_scores_68
+            }
 
-def process_images_based_on_scores(json_file_path, landmark_score=0.9, target_path='./copied_images', delete=False, copy=False, verbose=False):
+    if output_json:
+        try:
+            with open(output_json, 'w', encoding='utf-8') as f:
+                json.dump(image_result_dict, f, indent=4, ensure_ascii=False)
+            print(f"Detection results saved to {output_json}")
+        except Exception as e:
+            print(f"Error saving JSON file {output_json}: {e}")
+
+def process_images_based_on_scores(output_json, landmark_score=0.9, target_path='./copied_images', delete=False, copy=False, verbose=False):
     try:
         target_path = os.path.abspath(target_path)
-        with open(json_file_path, 'r', encoding='utf-8') as f:
+        with open(output_json, 'r', encoding='utf-8') as f:
             image_result_dict = json.load(f)
 
         files_to_delete = []
@@ -54,7 +83,7 @@ def process_images_based_on_scores(json_file_path, landmark_score=0.9, target_pa
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process images based on face landmark scores in a JSON file.')
-    parser.add_argument('json_file_path', type=str, nargs='?', default='face.json',
+    parser.add_argument('output_json', type=str, nargs='?', default='face.json',
                         help='Path to the JSON file containing face detection results. Default is face.json.')
     parser.add_argument('--landmark_score', type=float, default=0.9,
                         help='Threshold for face landmark scores.')
@@ -70,7 +99,7 @@ if __name__ == "__main__":
     else:
         target_path = args.copy if args.copy else './copied_images'
         process_images_based_on_scores(
-            args.json_file_path,
+            args.output_json,
             args.landmark_score,
             target_path,
             args.delete,
