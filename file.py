@@ -8,41 +8,32 @@ def save_output_json(results, output_json: str = 'face.json', output_full_data: 
     """
     支持跨磁盘/网络路径的智能路径压缩存储
     """
-    # 按磁盘/挂载点分组
     drive_groups = defaultdict(list)
     for file_path, data in results:
         abs_path = os.path.abspath(file_path)
-        drive = os.path.splitdrive(abs_path)[0]  # 获取磁盘标识（如 'C:' 或 '\\server'）
+        drive = os.path.splitdrive(abs_path)[0]
         drive_groups[drive].append((abs_path, data))
 
     final_output = {}
 
-    # 处理每个磁盘组
     for drive, files in drive_groups.items():
-        # 获取该磁盘下的所有绝对路径
         abs_paths = [fp for fp, _ in files]
-        
-        # 计算该磁盘内的公共前缀
-        common_prefix = os.path.commonprefix(abs_paths)
-        if not common_prefix.endswith(os.sep):
-            common_prefix = os.path.dirname(common_prefix) + os.sep
-        
-        # 构建路径树
+        if not abs_paths:
+            continue
+
+        # 使用commonpath获取公共路径并确保以分隔符结尾
+        common_prefix = os.path.commonpath(abs_paths)
+        common_prefix = os.path.join(common_prefix, '')  # 确保目录格式
+
         path_tree = {}
         for abs_path, (bounding_boxes, face_scores, landmarks_5, landmarks_68, scores_68) in files:
-            # 计算该磁盘内的相对路径
-            rel_path = os.path.relpath(abs_path, common_prefix)
-            
-            # 转换为跨平台路径格式
-            rel_path = rel_path.replace('\\', '/')  # 统一使用正斜杠
+            rel_path = os.path.relpath(abs_path, common_prefix).replace('\\', '/')
             parts = rel_path.split('/')
             
-            # 构建嵌套字典结构
             current_level = path_tree
             for part in parts[:-1]:
                 current_level = current_level.setdefault(part, {})
             
-            # 存储文件数据
             file_data = {
                 'face_scores': face_scores,
                 'face_landmark_scores_68': scores_68
@@ -55,17 +46,15 @@ def save_output_json(results, output_json: str = 'face.json', output_full_data: 
             }
             current_level[parts[-1]] = file_data
 
-        # 转换公共前缀为网络路径格式
         normalized_prefix = common_prefix.replace('\\', '/')
         if not normalized_prefix.endswith('/'):
             normalized_prefix += '/'
         final_output[normalized_prefix] = path_tree
 
-    # 保存结果
     try:
         with open(output_json, 'w', encoding='utf-8') as f:
             json.dump(final_output, f, indent=4, ensure_ascii=False)
-        print(f"Cross-drive optimized results saved to {output_json}")
+        print(f"results saved to {output_json}")
     except Exception as e:
         print(f"Error saving JSON: {str(e)}")
 
@@ -76,49 +65,38 @@ def process_images_based_on_scores(output_json, landmark_score=0.9, target_path=
             data = json.load(f)
         
         files_to_process = []
-        
-        # 增强版路径展开器
-        def walk_tree(node, base_path, current_rel_path=""):
+
+        def walk_tree(node, norm_base, current_rel_path=""):
             for key, value in node.items():
-                # 构建当前层级相对路径
                 new_rel_path = os.path.join(current_rel_path, key)
-                
                 if isinstance(value, dict):
                     if any(k in value for k in ['face_scores', 'face_landmark_scores_68']):
-                        # 文件节点：base_path + 完整相对路径
-                        full_path = os.path.join(base_path, new_rel_path)
-                        files_to_process.append( (full_path, value) )
+                        files_to_process.append((norm_base, new_rel_path, value))
                     else:
-                        # 目录节点：继续递归
-                        walk_tree(value, base_path, new_rel_path)
+                        walk_tree(value, norm_base, new_rel_path)
 
-        # 遍历所有根路径（保持不变）
         for base_path, subtree in data.items():
             norm_base = os.path.normpath(base_path)
             walk_tree(subtree, norm_base)
 
-        # 新增评分过滤逻辑
         filtered_files = []
-        for src_path, results in files_to_process:
+        for norm_base, rel_path, results in files_to_process:
             scores = results.get('face_landmark_scores_68', [])
-            avg_score = sum(scores)/len(scores) if scores else 0
-            
-            # 核心修复点：应用landmark_score阈值
+            avg_score = sum(scores) / len(scores) if scores else 0
             if (delete and avg_score < landmark_score) or (copy and avg_score >= landmark_score):
-                filtered_files.append( (src_path, results, avg_score) )
+                filtered_files.append((norm_base, rel_path, results, avg_score))
 
-        # 处理删除操作
         if delete:
-            for path, _, score in filtered_files:
-                if os.path.exists(path):
-                    os.remove(path)
+            for norm_base, rel_path, _, score in filtered_files:
+                src_path = os.path.join(norm_base, rel_path)
+                if os.path.exists(src_path):
+                    os.remove(src_path)
                     if verbose:
-                        print(f"Deleted [{score:.2f}]: {path}")
+                        print(f"Deleted [{score:.2f}]: {src_path}")
 
-        # 处理复制操作
         if copy:
-            for src_path, _, score in filtered_files:
-                rel_path = os.path.relpath(src_path, norm_base)
+            for norm_base, rel_path, _, score in filtered_files:
+                src_path = os.path.join(norm_base, rel_path)
                 dst_path = os.path.join(target_path, rel_path)
                 os.makedirs(os.path.dirname(dst_path), exist_ok=True)
                 shutil.copy2(src_path, dst_path)
@@ -131,7 +109,6 @@ def process_images_based_on_scores(output_json, landmark_score=0.9, target_path=
         raise
 
 if __name__ == "__main__":
-    # 保持主函数不变，参数处理逻辑兼容原有用法
     parser = argparse.ArgumentParser(description='Process images based on optimized JSON structure.')
     parser.add_argument('output_json', type=str, nargs='?', default='face.json',
                       help='Path to the JSON file containing face detection results. Default is face.json.')
