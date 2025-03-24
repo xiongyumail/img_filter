@@ -12,10 +12,26 @@ class App:
         self.root.title(f"IMG FLITER - 版本: {__version__}")
         self.last_error = None
         self.setup_ui()
+        self.center_window()  # 添加居中调用
         self.root.bind("<<Success>>", self.on_success)
         self.root.bind("<<Error>>", self.on_error)
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
-        self.running = False  # 跟踪任务运行状态
+        self.running = False
+
+    # 添加的居中方法
+    def center_window(self):
+        """
+        将窗口居中显示
+        """
+        self.root.update_idletasks()  # 确保窗口尺寸更新
+        # 获取窗口尺寸
+        width = self.root.winfo_width()
+        height = self.root.winfo_height()
+        # 计算居中坐标
+        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.root.winfo_screenheight() // 2) - (height // 2)
+        # 设置窗口位置
+        self.root.geometry(f'+{x}+{y}')
 
     def setup_ui(self):
         self.root.columnconfigure(0, weight=1)
@@ -144,7 +160,7 @@ class App:
         self.create_path_selector(frame, "YOLO模型路径:", self.yolo_path, 
                                 "models/yoloface_8n.onnx", 0)
         
-        # FAN模型路径
+        # 2DFAN模型路径
         self.fan_path = tk.StringVar()
         self.create_path_selector(frame, "2DFAN模型路径:", self.fan_path, 
                                 "models/2dfan4.onnx", 1)
