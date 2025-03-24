@@ -5,6 +5,7 @@ import subprocess
 import sys
 from face_detector import FaceDetector
 from file import process_images_based_on_scores, save_output_json
+from version import __version__
 
 def main(args):
     folder_paths = []
@@ -52,6 +53,7 @@ def main(args):
             raise Exception(f"Failed to start display app: {e}")
 
 if __name__ == "__main__":
+    print(f"Version: {__version__}")
     parser = argparse.ArgumentParser(description='Process images in one or more folders and save detection results to face.json.')
     parser.add_argument('--input_json', type=str, help='Path to the JSON file containing folder paths.')
     parser.add_argument('folder_path', type=str, nargs='*', help='Path to one or more folders containing images.')
