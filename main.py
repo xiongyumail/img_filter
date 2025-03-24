@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument('folder_path', type=str, nargs='*', help='Path to one or more folders containing images.')
     parser.add_argument('--size_yoloface', type=str, default='640x640', help='Resolution for the YOLOFace detector, in the format "widthxheight".')
     parser.add_argument('--size_2dfan4', type=str, default='256x256', help='Resolution for the 2DFAN4 detector, in the format "widthxheight".')
-    parser.add_argument('--face_detector_score', type=float, default=0.7, help='Score threshold for face detection.')
+    parser.add_argument('--face_detector_score', type=float, default=0.8, help='Score threshold for face detection.')
     parser.add_argument('--output_json', type=str, default='face.json', help='Output JSON file path for detection results.')
     parser.add_argument('--output_full_data', action='store_true', help='Output full data including bounding boxes and landmarks. Default is False.')
     parser.add_argument('--onnx_provider', type=str, default="OpenVINOExecutionProvider", help='ONNX runtime provider.')
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     parser.add_argument('--delete', action='store_true', help='Delete images based on face scores and landmark scores.')
     parser.add_argument('--copy', nargs='?', const='./copied_images', type=str,
                         help='Copy images based on face landmark scores. Optionally specify the target path.')
-    parser.add_argument('--landmark_score', type=float, default=0.9, help='Threshold for face landmark scores.')
+    parser.add_argument('--landmark_score', type=float, default=0.95, help='Threshold for face landmark scores.')
     parser.add_argument('--display', action='store_true', help='Display processed image information using Flask app.')
 
     args = parser.parse_args()

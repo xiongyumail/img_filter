@@ -68,7 +68,7 @@ def save_output_json(results, output_json: str = 'face.json', output_full_data: 
     except Exception as e:
         print(f"Error saving JSON: {str(e)}")
 
-def process_images_based_on_scores(output_json, landmark_score=0.9, target_path='./copied_images', 
+def process_images_based_on_scores(output_json, landmark_score=0.95, target_path='./copied_images', 
                                   delete=False, copy=False, verbose=False):
     try:
         with open(output_json, 'r', encoding='utf-8') as f:
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process images based on optimized JSON structure.')
     parser.add_argument('output_json', type=str, nargs='?', default='face.json',
                       help='Path to the JSON file containing face detection results. Default is face.json.')
-    parser.add_argument('--landmark_score', type=float, default=0.9,
+    parser.add_argument('--landmark_score', type=float, default=0.95,
                       help='Threshold for face landmark scores.')
     parser.add_argument('--delete', action='store_true', 
                       help='Delete images based on face scores and landmark scores.')
