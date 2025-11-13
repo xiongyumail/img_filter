@@ -12,6 +12,26 @@
 - **图像筛选与管理**：新增的删除和复制功能，可根据人脸检测分数和人脸关键点分数，自动删除不符合条件的图像，或复制符合条件的图像到指定目录，方便用户对图像数据集进行筛选和管理。通过 `--landmark_score` 参数，用户可以灵活控制图像的筛选标准；通过 `--delete` 选项和 `--copy` 选项，用户可以控制图像的删除复制操作，`--copy` 选项可选择指定目标路径。
 - **图像信息展示**：新增基于 Flask 的图像信息展示功能，可在网页上查看图像的分类、文件名、人脸质量均分、特征点精度均分等信息，并支持分页浏览和分类筛选，方便用户直观地查看和管理检测结果。
 
+## 环境搭建
+### 安装Conda
+1. 从Conda官方网站下载并安装Conda，确保安装过程中勾选“Add Anaconda to my PATH environment variable”选项，以便将Conda添加到系统环境变量中。
+
+### 创建并激活虚拟环境
+1. 打开命令提示符或终端，运行以下命令创建名为`img_filter`的虚拟环境，指定Python版本为3.12：
+```bash
+conda create --name img_filter python=3.12
+```
+2. 激活虚拟环境：
+```bash
+conda activate img_filter
+```
+
+### 安装OpenVINO
+在激活的虚拟环境中，运行以下命令安装OpenVINO 2025.0.0版本：
+```bash
+conda install conda-forge::openvino=2025.0.0
+```
+
 ## 依赖安装
 
 ### 通用依赖
@@ -39,7 +59,7 @@ pip install opencv-python numpy onnxruntime flask
 若要利用 Intel 显卡进行加速，需安装 `onnxruntime-openvino`：
 
 ```bash
-pip install onnxruntime-openvino
+pip install onnxruntime-openvino==1.20.0
 ```
 
 同时，务必确保系统已安装 Intel 显卡驱动程序，以保障显卡正常工作。可前往 [Intel 官方网站](https://www.intel.com/content/www/us/en/download-center/home.html) 下载并安装最新的显卡驱动。
